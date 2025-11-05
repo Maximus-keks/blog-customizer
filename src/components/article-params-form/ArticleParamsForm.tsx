@@ -17,7 +17,7 @@ import {
 } from 'src/constants/articleProps';
 
 import { useState, useRef } from 'react';
-import { useOutsideClickClose } from 'src/ui/select/hooks/useOutsideClickClose';
+import { useCloseOnOutsideClickOrEsc } from 'src/ui/select/hooks/useCloseOnOutsideClickOrEsc';
 
 import styles from './ArticleParamsForm.module.scss';
 import clsx from 'clsx';
@@ -33,23 +33,23 @@ export const ArticleParamsForm = ({
 	setArticleState,
 }: ArticleParamsFormProps) => {
 	const asideRef = useRef<HTMLElement>(null); //создаём ссылку на DOM-элемент <aside> для отслеживания кликов вне сайдбара
-	const [isOpen, setIsOpen] = useState(false); //состояние видимости сайдбара: false — закрыт, true — открыт
+	const [isFormOpen, setIsFormOpen] = useState(false); //состояние видимости сайдбара: false — закрыт, true — открыт
 	const [settingsState, setSettingsState] =
 		useState<ArticleStateType>(defaultArticleState); //локальное состояние формы, которое хранит выбранные пользователем настройки до нажатия "Применить"
 
 	// Обработчик переключения видимости сайдбара
 	const handleToggle = () => {
-		if (!isOpen) {
+		if (!isFormOpen) {
 			setSettingsState(currentState); //при открытии копируем актуальные настройки в локальное состояние
 		}
-		setIsOpen(!isOpen);
+		setIsFormOpen(!isFormOpen);
 	};
 
-	// Кастомный хук, который закрывает сайдбар при клике вне его области
-	useOutsideClickClose({
-		isOpen: isOpen,
-		onChange: setIsOpen,
-		rootRef: asideRef,
+	// Кастомный хук, который закрывает сайдбар при клике вне его области или на Esc
+	useCloseOnOutsideClickOrEsc({
+		isOpenElement: isFormOpen,
+		onClose: () => setIsFormOpen(false),
+		elementRef: asideRef,
 	});
 
 	// Обработчик изменений полей в форме
@@ -62,7 +62,7 @@ export const ArticleParamsForm = ({
 	const handleSubmit = (evt: React.FormEvent) => {
 		evt.preventDefault();
 		setArticleState(settingsState);
-		setIsOpen(false);
+		setIsFormOpen(false);
 	};
 
 	// Сброс настроек к значениям "по умолчанию"
@@ -73,9 +73,11 @@ export const ArticleParamsForm = ({
 
 	return (
 		<>
-			<ArrowButton isOpen={isOpen} onClick={handleToggle} />
+			<ArrowButton isOpen={isFormOpen} onClick={handleToggle} />
 			<aside
-				className={clsx(styles.container, { [styles.container_open]: isOpen })}
+				className={clsx(styles.container, {
+					[styles.container_open]: isFormOpen,
+				})}
 				ref={asideRef}>
 				<form
 					className={styles.form}
